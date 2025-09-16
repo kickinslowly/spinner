@@ -6,6 +6,15 @@
       this.c = canvas || document.createElement('canvas');
       if(!canvas){ document.body.appendChild(this.c); }
       this.ctx = this.c.getContext('2d');
+      // Ensure the confetti canvas never blocks clicks and stays fixed on top
+      const s = this.c.style;
+      s.position = 'fixed';
+      s.left = '0';
+      s.top = '0';
+      s.width = '100vw';
+      s.height = '100vh';
+      s.pointerEvents = 'none';
+      s.zIndex = '9999';
       this.resize();
       this.particles = [];
       this.running = false;
