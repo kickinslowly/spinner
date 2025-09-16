@@ -1,0 +1,54 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spin the Wheel — {{ wheel_key }}</title>
+  <link rel="icon" href="/static/img/favicon.svg">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <img src="/static/img/favicon.svg" alt="wheel">
+      <div>Wheel: <strong>{{ wheel_key }}</strong></div>
+    </div>
+    <div style="margin-left:auto" class="small"><a href="/">Create New</a></div>
+  </div>
+  <div class="container">
+    <div class="grid">
+      <div class="panel wheel-wrap">
+        <h2>{{ wheel_key }}</h2>
+        <div class="wheel-area">
+          <div class="pointer"></div>
+          <canvas id="wheelCanvas" width="800" height="800"></canvas>
+        </div>
+        <div class="actions">
+          <button id="spinBtn" class="primary">🎡 Spin</button>
+          <span class="badge"><span id="segmentCount">0</span> segments</span>
+        </div>
+        <div id="winner" class="winner" style="display:none;"></div>
+      </div>
+      <div class="panel controls">
+        <h2>Segments</h2>
+        <div class="small">Loaded from this browser for key: <code>{{ wheel_key }}</code></div>
+        <div class="tabs">
+          <span class="small">Layer:</span>
+          <button id="tabLayer1" class="tab-btn active">Layer 1 (Students)</button>
+          <button id="tabLayer2" class="tab-btn">Layer 2 (Topics/Problems)</button>
+        </div>
+        <div class="row">
+          <label for="speedInput" class="small" style="min-width:60px">Speed</label>
+          <input id="speedInput" type="range" min="0.2" max="3" step="0.1" value="1">
+          <span class="small" id="speedValue">1.0x</span>
+        </div>
+        <div id="segments"></div>
+      </div>
+    </div>
+  </div>
+  <script>window.INIT_WHEEL_KEY="{{ wheel_key }}";</script>
+  <script src="/static/js/confetti.js"></script>
+  <script src="/static/js/wheel.js"></script>
+</body>
+</html>

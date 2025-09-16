@@ -1,0 +1,112 @@
+{
+  "test": {
+    "segments": [
+      {
+        "text": "Dael",
+        "weight": 1,
+        "color": "#8b5cf6"
+      },
+      {
+        "text": "Pablo",
+        "weight": 1,
+        "color": "#10b981"
+      },
+      {
+        "text": "Paloma",
+        "weight": 1,
+        "color": "#f59e0b"
+      },
+      {
+        "text": "Mateo",
+        "weight": 1,
+        "color": "#db4d4d"
+      },
+      {
+        "text": "Salad",
+        "weight": 1,
+        "color": "#5c85c7"
+      },
+      {
+        "text": "Pasta",
+        "weight": 1,
+        "color": "#db4d4d"
+      },
+      {
+        "text": "New Option",
+        "weight": 1,
+        "color": "#8b5cf6"
+      },
+      {
+        "text": "New Option",
+        "weight": 1,
+        "color": "#8b5cf6"
+      },
+      {
+        "text": "New Option",
+        "weight": 1,
+        "color": "#5c85c7"
+      }
+    ]
+  },
+  "America": {
+    "segments": [
+      {
+        "text": "America ",
+        "weight": 1.3856592825513374,
+        "color": "#f57575"
+      },
+      {
+        "text": "Texas",
+        "weight": 2.2028345679783174,
+        "color": "#ee2020"
+      },
+      {
+        "text": "Miami",
+        "weight": 1.7253986109720918,
+        "color": "#ee2020"
+      },
+      {
+        "text": "Sushi",
+        "weight": 2.4964677548566816,
+        "color": "#db4d4d"
+      },
+      {
+        "text": "Salad",
+        "weight": 1.4284569464089332,
+        "color": "#ab2b2b"
+      },
+      {
+        "text": "Pasta",
+        "weight": 1.8495546319861378,
+        "color": "#f75f5f"
+      }
+    ],
+    "layer2": [
+      {
+        "text": "New Option",
+        "weight": 1,
+        "color": "#f2c054"
+      },
+      {
+        "text": "New Option",
+        "weight": 1,
+        "color": "#f59e0b"
+      },
+      {
+        "text": "New Option",
+        "weight": 1,
+        "color": "#f59e0b"
+      },
+      {
+        "text": "New Option",
+        "weight": 1,
+        "color": "#f472b6"
+      },
+      {
+        "text": "New Option",
+        "weight": 1,
+        "color": "#8b5cf6"
+      }
+    ]
+  }
+}
