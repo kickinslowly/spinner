@@ -25,29 +25,46 @@
 
   const tick = new Audio("/static/sounds/tick.wav");
 
-  // Layer tabs
-  const tab1 = document.getElementById("tabLayer1");
-  const tab2 = document.getElementById("tabLayer2");
-  function updateTabUI(){
-    if(tab1&&tab2){
-      tab1.classList.toggle("active", activeLayer===1);
-      tab2.classList.toggle("active", activeLayer===2);
-    }
-  }
-  function switchLayer(n){
-    if(n!==1 && n!==2) return;
-    activeLayer = n;
-    segments = layers[activeLayer];
-    renderSegmentRows();
-    drawWheel();
-    updateTabUI();
+  // Layer tabs (dynamic)
+  const layerTabs = document.getElementById("layerTabs");
+  const addLayerBtn = document.getElementById("addLayerBtn");
+
+  function renderTabs(){
+    if(!layerTabs) return;
+    layerTabs.innerHTML = "";
+    layers.forEach((layer, i)=>{
+      const btn = document.createElement("button");
+      btn.className = "tab-btn" + (i===activeLayer?" active":"");
+      btn.innerHTML = `<span class="name">${(layer.name||`Layer ${i+1}`).replace(/</g,'&lt;')}</span><span class="edit" title="Rename">✎</span>`;
+      btn.addEventListener("click", ()=> switchLayer(i));
+      btn.querySelector(".edit")?.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const newName = prompt("Rename layer:", layer.name || `Layer ${i+1}`);
+        if(newName!==null){
+          layer.name = newName.trim() || layer.name || `Layer ${i+1}`;
+          renderTabs();
+        }
+      });
+      layerTabs.appendChild(btn);
+    });
   }
 
-  let layers = {1: [], 2: []}; // per-layer segments
-  let activeLayer = 1;
-  let segments = layers[activeLayer]; // alias to current layer
+  function switchLayer(i){
+    if(i<0 || i>=layers.length) return;
+    activeLayer = i;
+    segments = layers[activeLayer].segments;
+    renderSegmentRows();
+    drawWheel();
+    renderTabs();
+  }
+
+  let layers = [];
+  let activeLayer = 0;
+  let segments = []; // alias to current layer's segments
   let angle = 0;
   let spinning = false;
+  let rafId = null;
+  let spinToken = 0;
 
   const defaultColors = ["#2bab5e","#f2c054","#5c85c7","#db4d4d","#f59e0b","#10b981","#8b5cf6","#22d3ee","#ef4444","#f472b6"];
 
@@ -74,7 +91,12 @@
     try{ localStorage.setItem("wheel:speed:"+k, String(n)); }catch(e){}
   }
   function updateSpeedLabel(n){
-    if(speedValue){ speedValue.textContent = (Number(n)||1).toFixed(1)+"x"; }
+    if(speedValue){
+      const v = Number(n)||1;
+      // Show more precision for very small speeds so 0.02 doesn't appear as 0.0x
+      const label = v < 1 ? v.toFixed(2) : v.toFixed(1);
+      speedValue.textContent = label + "x";
+    }
   }
   function getSpeed(){
     const n = Number(speedInput?.value);
@@ -211,7 +233,11 @@
   }
 
   function spin(){
-    if(spinning || segments.length===0 || totalWeight()<=0) return;
+    if(segments.length===0 || totalWeight()<=0) return;
+    // cancel any in-flight animation and start fresh immediately
+    spinToken++;
+    const myToken = spinToken;
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
     spinning = true;
     winnerEl.style.display="none";
 
@@ -235,13 +261,16 @@
     const pointerAngle = -Math.PI/2; // top
     const mid = (targetStart + targetEnd)/2;
     let delta = (pointerAngle - mid);
+    // Normalize delta to [0, 2π) so alignment never reduces guaranteed extra rotation
+    const twoPi = Math.PI * 2;
+    delta = ((delta % twoPi) + twoPi) % twoPi;
 
-    // Add a few full spins + easing
-    const extra = Math.PI*2 * (4 + Math.floor(Math.random()*2)); // 4-5 spins
-    const targetAngle = angle + extra + delta;
+    // Ensure at least 2 full spins before entering winning segment on EVERY spin
+    const extraTurns = 2 + Math.random(); // 2–3 extra full turns beyond alignment
+    const targetAngle = angle + extraTurns * twoPi + delta;
 
     const baseDuration = 4000; // ms at 1.0x
-    const speedFactor = Math.max(0.2, Math.min(5, getSpeed()));
+    const speedFactor = Math.max(0.02, Math.min(5, getSpeed()));
     const duration = Math.max(600, baseDuration / speedFactor);
     const t0 = performance.now();
     let lastTickAngle = angle;
@@ -252,7 +281,8 @@
       if(winnerShown) return;
       winnerShown = true;
       const win = segments[idx];
-      winnerEl.textContent = `🎉 ${win.text} (Layer ${activeLayer})`;
+      const lname = (layers[activeLayer]?.name) ? layers[activeLayer].name : `Layer ${activeLayer+1}`;
+      winnerEl.textContent = `🎉 ${win.text} (${lname})`;
       winnerEl.style.display="block";
       confetti.burst(window.innerWidth/2, 120);
     }
@@ -260,6 +290,8 @@
     function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
 
     function frame(t){
+      // If a newer spin started, abandon this frame
+      if(myToken !== spinToken) { return; }
       const p = Math.min(1, (t - t0)/duration);
       const eased = easeOutCubic(p);
       const a = angle + (targetAngle - angle)*eased;
@@ -280,36 +312,65 @@
       }
 
       if(p<1){
-        requestAnimationFrame(frame);
+        rafId = requestAnimationFrame(frame);
       }else{
-        spinning=false;
-        // Ensure winner shown at end (fallback)
-        showWinnerOnce();
+        if(myToken === spinToken){
+          spinning=false;
+          rafId = null;
+          // Ensure winner shown at end (fallback)
+          showWinnerOnce();
+        }
       }
     }
-    requestAnimationFrame(frame);
+    rafId = requestAnimationFrame(frame);
   }
 
   function saveLocal(){
     const key = wheelKeyInput?.value?.trim() || "default-wheel";
-    const payload = { segments: layers[1], layer2: layers[2] };
+    const payload = { layers: layers };
     localStorage.setItem("wheel:"+key, JSON.stringify(payload));
     alert("Saved to browser under key: " + key);
   }
+  function normalizeSegments(arr){
+    return (arr||[]).map(s=>({
+      text: s.text ?? String(s.text ?? ""),
+      weight: (s.weight===0) ? 0 : (Number(s.weight) ? Number(s.weight) : 1),
+      color: s.color || randColor()
+    }));
+  }
+
+  function normalizeLayersData(data){
+    // Returns an array of {name, segments}
+    if(Array.isArray(data)){
+      // legacy: single-layer array
+      return [{ name: "Layer 1", segments: normalizeSegments(data) }];
+    }
+    if(data && Array.isArray(data.layers)){
+      return data.layers.map((l, idx)=>({
+        name: (l && typeof l.name==='string' && l.name.trim()) ? l.name.trim() : `Layer ${idx+1}`,
+        segments: normalizeSegments(l?.segments)
+      }));
+    }
+    if(data && (Array.isArray(data.segments) || Array.isArray(data.layer2))){
+      return [
+        { name: "Layer 1", segments: normalizeSegments(data.segments) },
+        { name: "Layer 2", segments: normalizeSegments(data.layer2) }
+      ].filter(l=> l.segments.length>0 || true);
+    }
+    return [];
+  }
+
   function loadLocal(key){
     const k = key || (wheelKeyInput?.value?.trim() || "default-wheel");
     const raw = localStorage.getItem("wheel:"+k);
     if(!raw){ alert("No wheel in browser for key: "+k); return; }
     try{
       const data = JSON.parse(raw);
-      if(Array.isArray(data)){
-        layers[1] = data; layers[2] = [];
-      }else{
-        layers[1] = data?.segments || [];
-        layers[2] = data?.layer2 || [];
-      }
-      segments = layers[activeLayer];
-      renderSegmentRows(); drawWheel(); updateTabUI();
+      const newLayers = normalizeLayersData(data);
+      layers = newLayers.length ? newLayers : [{ name: "Layer 1", segments: [] }];
+      activeLayer = Math.min(activeLayer, layers.length-1);
+      segments = layers[activeLayer].segments;
+      renderSegmentRows(); drawWheel(); renderTabs();
     }catch(e){ alert("Failed to parse saved wheel."); }
   }
 
@@ -360,16 +421,19 @@
 
   // Defaults
   function addDefaults(){
-    ["Pizza","Burgers","Tacos","Sushi","Salad","Pasta"].forEach((t,i)=> addSegment(t,1+Math.random()*1.5));
+    ["Pizza","Burgers","Tacos","Sushi","Salad","Pasta"].forEach((t)=> addSegment(t,1));
   }
 
   // Event bindings
   spinBtn?.addEventListener("click", spin);
   addSegBtn?.addEventListener("click", ()=> addSegment());
   addDefaultBtn?.addEventListener("click", addDefaults);
-  clearBtn?.addEventListener("click", ()=>{ layers[activeLayer]=[]; segments = layers[activeLayer]; renderSegmentRows(); drawWheel(); });
-  tab1?.addEventListener("click", ()=> switchLayer(1));
-  tab2?.addEventListener("click", ()=> switchLayer(2));
+  clearBtn?.addEventListener("click", ()=>{ layers[activeLayer].segments = []; segments = layers[activeLayer].segments; renderSegmentRows(); drawWheel(); });
+  addLayerBtn?.addEventListener("click", ()=>{
+    const n = layers.length + 1;
+    layers.push({ name: `Layer ${n}`, segments: [] });
+    switchLayer(layers.length - 1);
+  });
   shuffleColorsBtn?.addEventListener("click", shuffleColors);
   saveLocalBtn?.addEventListener("click", saveLocal);
   loadLocalBtn?.addEventListener("click", ()=>{
@@ -393,6 +457,12 @@
       const v = loadSavedSpeed();
       if(speedInput){ speedInput.value = v; updateSpeedLabel(v); }
     }
+
+    // Initialize with a default single layer
+    layers = [{ name: "Layer 1", segments: [] }];
+    activeLayer = 0;
+    segments = layers[0].segments;
+
     if(window.INIT_WHEEL_KEY){
       wheelKeyInput && (wheelKeyInput.value = window.INIT_WHEEL_KEY);
       initSpeedUI();
@@ -401,23 +471,19 @@
       if(raw){
         try{
           const data = JSON.parse(raw);
-          if(Array.isArray(data)){
-            layers[1] = data; layers[2] = [];
-          }else{
-            layers[1] = data?.segments || [];
-            layers[2] = data?.layer2 || [];
-          }
-        }catch(e){ layers[1]=[]; layers[2]=[]; }
+          const newLayers = normalizeLayersData(data);
+          if(newLayers.length){ layers = newLayers; activeLayer = 0; segments = layers[0].segments; }
+        }catch(e){ /* ignore parse errors */ }
       }
     }else{
       initSpeedUI();
       // starter segments for Layer 1 only
       addDefaults();
-      renderSegmentRows(); drawWheel(); updateTabUI();
-      return;
     }
-    segments = layers[activeLayer];
-    renderSegmentRows(); drawWheel(); updateTabUI();
+
+    // Finalize initial render
+    segments = layers[activeLayer].segments;
+    renderSegmentRows(); drawWheel(); renderTabs();
   }
   boot();
 

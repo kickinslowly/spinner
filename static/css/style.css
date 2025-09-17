@@ -61,5 +61,8 @@ hr{border:0;border-top:1px dashed #2b3566;margin:12px 0}
 }
 /* Tabs for layers */
 .tabs{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0 6px}
-.tab-btn{padding:8px 12px; border-radius:10px; border:1px solid #2b3566; background:#0d1430; color:var(--text); cursor:pointer}
+.tab-btn{padding:8px 12px; border-radius:10px; border:1px solid #2b3566; background:#0d1430; color:var(--text); cursor:pointer; display:inline-flex; align-items:center}
 .tab-btn.active{background:linear-gradient(90deg, var(--accent), var(--accent2)); border:none; font-weight:700}
+/* Pencil icon on hover */
+.layer-tabs .tab-btn .edit{opacity:0; margin-left:6px; font-size:12px}
+.layer-tabs .tab-btn:hover .edit{opacity:0.9}

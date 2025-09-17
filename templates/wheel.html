@@ -34,13 +34,13 @@
         <h2>Segments</h2>
         <div class="small">Loaded from this browser for key: <code>{{ wheel_key }}</code></div>
         <div class="tabs">
-          <span class="small">Layer:</span>
-          <button id="tabLayer1" class="tab-btn active">Layer 1 (Students)</button>
-          <button id="tabLayer2" class="tab-btn">Layer 2 (Topics/Problems)</button>
+          <span class="small">Layers:</span>
+          <div id="layerTabs" class="layer-tabs"></div>
+          <button id="addLayerBtn" class="tab-btn ghost">+ Add Wheel Layer</button>
         </div>
         <div class="row">
           <label for="speedInput" class="small" style="min-width:60px">Speed</label>
-          <input id="speedInput" type="range" min="0.2" max="3" step="0.1" value="1">
+          <input id="speedInput" type="range" min="0.02" max="3" step="0.01" value="1">
           <span class="small" id="speedValue">1.0x</span>
         </div>
         <div id="segments"></div>
